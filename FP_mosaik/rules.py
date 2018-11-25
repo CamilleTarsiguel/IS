@@ -21,9 +21,10 @@ META = {
         'ManageApp': {
             'public': True,
             'params': [
-                'T_night',
-                'T_day',
-                'setpoint_change_rate', # Damping factor
+                    'coffee_time'
+                #'T_night',
+                #'T_day',
+                #'setpoint_change_rate', # Damping factor
                 #'T_min', # Minimal comfortable temperature [deg C]
                 #'T_max', # Maximal comfortable temperature [deg C]
                 #'P_max', # Heater maximal power [kW]        
@@ -32,16 +33,16 @@ META = {
                 #'rated_charge_capacity'                
             ],             
             'attrs': [
-                'coffee_time', #Input
-                'alarm_time', #Input
-                'heating_time',#Input
-                'zs',#Input
-                'T',#Input
+                #'coffee_time', #Input
+                #'alarm_time', #Input
+                #'heating_time',#Input
+                #'zs',#Input
+                #'T',#Input
                 'time',#Input
-                'mode',#Input
-                'song',#Input
+                #'mode',#Input
+                #'song',#Input
                 'coffee_on',
-                'Pset_heat',
+                #'Pset_heat',
                 
 
             ]
@@ -84,11 +85,26 @@ class ManageApp(mosaik_api.Simulator):
             self.returnv={}
         
         #### RULES TO MODIFY ####
+        
+        @Rule(Input(coffee_time=MATCH.coffee_time, time = MATCH.time), NOT(Output(coffee_on = True)),
+              TEST(lambda coffee_time, time : coffee_time == time),
+              salience=5)        
+        def _time_for_coffee(self, time):
+            
+            self.declare(Output(coffee_on = True))
+            print('something happened at %d' %time)
+
+        
 
         #### RULES FOR COFFEE MACHINE ####
         
         
-        
+         # rule to return values last
+        @Rule(AS.out << Output(),              
+              salience=0) # 
+        def _returnoutputs(self,out):
+            self.returnv.update(**out.retrieve())
+    
 
         #### END OF RULES ####
 
@@ -110,21 +126,21 @@ class ManageApp(mosaik_api.Simulator):
         # for engine:
         self.engine = self.ControlEngine()
 
-    def init(self, sid, step_size=5, eid_prefix="ControlE", verbose=False):
+    def init(self, sid, step_size=5, eid_prefix="Rules", verbose=False):
         self.step_size = step_size
         self.eid_prefix = eid_prefix
         self.verbose = verbose
         return self.meta
 
     def create(
-            self, num, model,
-            setpoint_change_rate=0.80,
-            T_min=19,
-            T_max=24,
-            P_max=5,
-            batt_storage_capacity=10, 
-            rated_discharge_capacity=5,
-            rated_charge_capacity=5):
+            self, num, model, coffee_time):#,
+            #setpoint_change_rate=0.80,
+            #T_min=19,
+            #T_max=24,
+            #P_max=5,
+            #batt_storage_capacity=10, 
+            #rated_discharge_capacity=5,
+            #rated_charge_capacity=5):
         counter = self.eid_counters.setdefault(model, count())
         entities = []
 
@@ -133,19 +149,22 @@ class ManageApp(mosaik_api.Simulator):
             eid = '%s_%s' % (self.eid_prefix, next(counter))
 
             esim = {
-                    'Pset_heat': 0,
-                    'Pset_batt': 0,
-                    'newPset_batt': 0,
-                    'Pgrid': 0,
-                    'rate': setpoint_change_rate, # update rate of controller
-                    'T': 22,
-                    'T_min': T_min,
-                    'T_max': T_max,
-                    'P_max': P_max,
-                    'heating': False,
-                    'SOC' : 0.5,
-                    'P_disc_batt': rated_discharge_capacity,
-                    'P_char_batt': rated_charge_capacity                
+                    #'Pset_heat': 0,
+                    #'Pset_batt': 0,
+                    #'newPset_batt': 0,
+                    #'Pgrid': 0,
+                    #'rate': setpoint_change_rate, # update rate of controller
+                    #'T': 22,
+                    #'T_min': T_min,
+                    #'T_max': T_max,
+                    #'P_max': P_max,
+                    #'heating': False,
+                    #'SOC' : 0.5,
+                    #'P_disc_batt': rated_discharge_capacity,
+                    #'P_char_batt': rated_charge_capacity 
+                    'time' : -1,
+                    'coffee_time' : coffee_time,
+                    'coffee_on' : False
             }
             self.simulators[eid] = esim
             #self.engine.set_return({})
@@ -163,16 +182,16 @@ class ManageApp(mosaik_api.Simulator):
             data = inputs.get(eid, {})
             for attr, incoming in data.items():
                 if self.verbose: print("Incoming data:{0}".format(incoming))
-                if attr == 'Pgrid':
+                if attr == 'coffee_time':
                     # If multiple sources send a measurement,
                     # use the mean
-                    esim['Pgrid'] = mean(incoming.values())
-                elif attr == 'T':
-                    esim['T'] = mean(incoming.values())
-                elif attr == 'SOC':
-                    esim['SOC'] = mean(incoming.values())
-                elif attr == 'zs':
-                    esim['zs'] = mean(incoming.values())
+                    esim['coffee_time'] = mean(incoming.values())
+                elif attr == 'coffee_on':
+                    esim['coffee_on'] = mean(incoming.values())
+                elif attr == 'time':
+                    esim['time'] = mean(incoming.values())
+                #elif attr == 'zs':
+                #    esim['zs'] = mean(incoming.values())
                 else:
                     raise RuntimeError("Controller {0} has no input {1}.".format(eid, attr))
                     
@@ -195,17 +214,17 @@ class ManageApp(mosaik_api.Simulator):
             esim.update([(key, ce.returnv[key]) for key in ce.returnv.keys()])
             
             #low-pass filter on setpoint update: first on heat
-            newPset = esim['newPset_heat'] 
-            r = esim['rate']
-            Pset = esim['Pset_heat']
-            Pset = r*newPset + (1-r)*Pset
-            esim['Pset_heat'] = Pset
+            #newPset = esim['newPset_heat'] 
+            #r = esim['rate']
+            #Pset = esim['Pset_heat']
+            #Pset = r*newPset + (1-r)*Pset
+            #esim['Pset_heat'] = Pset
             
             #low-pass filter on setpoint update: then same filter on  battery power
-            newPset = esim['newPset_batt'] 
-            Pset = esim['Pset_batt']
-            Pset = r*newPset + (1-r)*Pset
-            esim['Pset_batt'] = Pset
+            #newPset = esim['newPset_batt'] 
+            #Pset = esim['Pset_batt']
+            #Pset = r*newPset + (1-r)*Pset
+            #esim['Pset_batt'] = Pset
 
         return time + self.step_size
 
@@ -215,14 +234,14 @@ class ManageApp(mosaik_api.Simulator):
             requests = outputs.get(eid, [])
             mydata = {}
             for attr in requests:
-                if attr == 'Pgrid':
-                    mydata[attr] = esim['Pgrid']
-                elif attr == 'Pset_heat':
-                    mydata[attr] = esim['Pset_heat']
-                elif attr == 'Pset_batt':
-                    mydata[attr] = esim['Pset_batt']
-                elif attr == 'T':
-                    mydata[attr] = esim['T']
+                if attr == 'coffee_time':
+                    mydata[attr] = esim['coffee_time']
+                elif attr == 'coffee_on':
+                    mydata[attr] = esim['coffee_on']
+                #elif attr == 'Pset_batt':
+                #    mydata[attr] = esim['Pset_batt']
+                #elif attr == 'T':
+                #    mydata[attr] = esim['T']
                 else:
                     raise RuntimeError("Control {0} has no attribute {1}.".format(eid, attr))
             data[eid] = mydata
@@ -234,19 +253,21 @@ if __name__ == '__main__':
     testengine.reset()
     
     #### CHANGE '_in' DICTIONARY TO TEST DIFFERENT SCENARIOS ####
-    _in = {'Pset_heat': 3.3,
-           'Pset_batt': 3.3,
-           'newPset_batt': 0,
-           'Pgrid': -10,
-           'rate': 0.5,
-           'T': 22,
-           'T_min': 18,
-           'T_max': 24,
-           'P_max': 5,
-           'heating': False,
-           'SOC' : 0.5,
-           'P_disc_batt': 5,
-           'P_char_batt': 5                
+    _in = {#'Pset_heat': 3.3,
+           #'Pset_batt': 3.3,
+           #'newPset_batt': 0,
+           #'Pgrid': -10,
+           #'rate': 0.5,
+           #'T': 22,
+           #'T_min': 18,
+           #'T_max': 24,
+           #'P_max': 5,
+           #'heating': False,
+           #'SOC' : 0.5,
+           #'P_disc_batt': 5,
+           #'P_char_batt': 5 
+            'coffee_time' : 10 ,
+            'time': 10              
           }
     testengine.declare(Input(**_in))
     print_engine(testengine)

@@ -13,6 +13,9 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
+
+#T_night, T_day, T_time, Coffee_time, Alarm_sound, Alarm_vol, Alarm_time, Light_energy, Light_time
+
 plt.rcParams['figure.figsize'] = [10,5]
 data_path = 'temp_files/'
 
@@ -55,6 +58,9 @@ SIM_CONFIG = {
     'LampControl': {
         'python': 'dtu_mosaik.LampSim:LampControl'
     },
+    'RuleEngine': {
+        'python': 'rules:ManageApp'
+    },
 }
 
 # quick check if filepath exists
@@ -82,6 +88,8 @@ weather_base = {'cloudy': ['/PV715_20180125', '/PV715_20180126', '/PV715_2018012
                 'intermittent': ['/PV715_20180423', '/PV715_20180430', '/PV715_20180820', '/PV715_20180722'],
                 'sunny': ['/PV715_20180730', '/PV715_20180728', '/PV715_20180729', '/PV715_20180721']}
 
+coffee_time = 10
+
 if random_weather:
     day = weather_base[day_type][np.random.randint(0, 4)]
 else:
@@ -94,7 +102,7 @@ def init_entities(
         control_change_rate=basic_conf['controller_change_rate'],
         T_min=basic_conf['lower_temp_limit'],
         T_max=basic_conf['upper_temp_limit'], pv1_rated_capacity=pv1_cap, init_val = 0, weather=day, 
-        filename=data_path+scenario_name):
+        filename=data_path+scenario_name, ct = coffee_time):
     sim_dict = {}
     entity_dict = {}
     
@@ -170,6 +178,16 @@ def init_entities(
     
     sim_dict['lc1'] = lc_sim
     entity_dict['lc1'] = lc_entity_1
+    
+    
+    ## Rule Engine
+    rule_sim = world.start(
+            'RuleEngine',
+            eid_prefix = 'rule')
+    rule_entity_1 = rule_sim.ManageApp(coffee_time = ct)
+    
+    sim_dict['rule1'] = rule_sim
+    entity_dict['rule1'] = rule_entity_1
    
     ## Collector
     collector_sim = world.start(
@@ -199,18 +217,18 @@ world.connect(entity_dict['lumin1'], entity_dict['control1'], ('zs', 'zs'))
 world.connect(entity_dict['house1'], entity_dict['control1'], ('T_int', 'T'))
 world.connect(entity_dict['control1'], entity_dict['house1'], ('Pset_heat', 'Pset'), time_shifted=True,
                   initial={'Pset_heat': 0.0})
-
-
+world.connect(entity_dict['rule1'], entity_dict['cm1'], ('coffee_on', 'turn_on'))
+world.connect(entity_dict['cl1'], entity_dict['rule1'], ('val', 'time'))
 # Connect to Collector
 #world.connect(entity_dict['cl1'], entity_dict['collector'], ('val', 'time[m]'))
-world.connect(entity_dict['lumin1'], entity_dict['collector'], ('zs', 'Light power [kwh]'))
-world.connect(entity_dict['house1'], entity_dict['collector'], ('P', 'Pheat[kW]'))
-world.connect(entity_dict['house1'], entity_dict['collector'], ('T_int', 'HouseTemp[C]'))
-#world.connect(entity_dict['cm1'], entity_dict['collector'], ('on', 'State Of Machine'))
+#world.connect(entity_dict['lumin1'], entity_dict['collector'], ('zs', 'Light power [kwh]'))
+#world.connect(entity_dict['house1'], entity_dict['collector'], ('P', 'Pheat[kW]'))
+#world.connect(entity_dict['house1'], entity_dict['collector'], ('T_int', 'HouseTemp[C]'))
+world.connect(entity_dict['cm1'], entity_dict['collector'], ('on', 'Coffee State'))
 #world.connect(entity_dict['cm1'], entity_dict['collector'], ('bean_level', 'Beans level'))
-world.connect(entity_dict['lc1'], entity_dict['collector'], ('on', 'State Of Machine'))
-world.connect(entity_dict['lc1'], entity_dict['collector'], ('Pmax', 'Pmax'))
-world.connect(entity_dict['lc1'], entity_dict['collector'], ('progressive', 'Progressive'))
+#world.connect(entity_dict['lc1'], entity_dict['collector'], ('on', 'Lamp State'))
+#world.connect(entity_dict['lc1'], entity_dict['collector'], ('Pmax', 'Pmax'))
+#world.connect(entity_dict['lc1'], entity_dict['collector'], ('progressive', 'Progressive'))
 
 
 

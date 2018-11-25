@@ -14,7 +14,7 @@ META =  {
         'CoffeeMachine': {
             'public': True,
             'params': [ 'init_bean_level', 'init_time'],
-            'attrs': ['broken', 'bean_level', 'working_time', 'on', 'cpt'],
+            'attrs': ['broken', 'bean_level', 'working_time', 'on', 'cpt' , 'turn_on'],
         },
     },
 }
@@ -69,19 +69,23 @@ class CoffeeMachine(mosaik_api.Simulator):
 
     def step(self, time, inputs):
         for eid, esim in self.simulators.items():
-#            data = inputs.get(eid, {})
-#            for attr, incoming in data.items():
-#                if attr == 'delta':
-#                    new_delta = sum(incoming.values())
+            data = inputs.get(eid, {})
+            for attr, incoming in data.items():
+                if attr == 'turn_on':
+                    turn_on = sum(incoming.values())
 #                    self.entityparams[eid].delta = new_delta
             esim.step()
-        if esim.is_on() == True:
-            esim.prep_coffee()
-        if esim.get_count()>=esim.get_time():
-            esim.machine_off() 
-            esim.use_beans()
-            
-        return time + 1
+            if turn_on == True:
+                esim.machine_on()
+            if esim.is_on() == True:
+                esim.prep_coffee()
+            if esim.get_count()>=esim.get_time():
+                esim.machine_off() 
+                esim.use_beans()
+                print('Coffee is ready')
+                esim.reset_count()
+                print(esim.is_on())
+        return time + 60
     
 
     def get_data(self, outputs):

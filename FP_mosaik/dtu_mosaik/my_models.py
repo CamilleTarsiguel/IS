@@ -65,6 +65,8 @@ class coffee_machine:
     
     def is_on(self):
         return(self.on)
+    def reset_count(self):
+        self.cpt = 0
         
 
 class sound_machine:
