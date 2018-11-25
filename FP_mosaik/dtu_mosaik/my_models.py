@@ -26,12 +26,12 @@ class clock:
 
         
 class coffee_machine:
-    def __init__(self, init_bean_level = 100, init_time = 5*60):
+    def __init__(self, init_bean_level = 100, init_time = 5):
         #self.state = 'on'
         self.broken = False
         self.bean_level = init_bean_level # percentage
         self.working_time = init_time # time to prepare coffee. default :  5 minutes
-        self.on = False
+        self.on = 0
         self.cpt = 0
     
     def step(self):
@@ -39,13 +39,13 @@ class coffee_machine:
         self.broken = r>999
     
     def machine_on(self):
-        self.on = True
+        self.on = 1
         
     def machine_off(self):
-        self.on = False
+        self.on = 0
     
     def prep_coffee(self):
-        self.on = True
+        self.on = 1
         self.cpt += 1
           
     def use_beans(self):

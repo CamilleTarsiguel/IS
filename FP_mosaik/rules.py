@@ -86,6 +86,11 @@ class ManageApp(mosaik_api.Simulator):
         
         #### RULES TO MODIFY ####
         
+        @Rule(Input(coffee_time=MATCH.coffee_time),
+              salience=3)        
+        def no_coffee(self):
+            self.declare(Output(coffee_on = False))
+        
         @Rule(Input(coffee_time=MATCH.coffee_time, time = MATCH.time), NOT(Output(coffee_on = True)),
               TEST(lambda coffee_time, time : coffee_time == time),
               salience=5)        
@@ -94,7 +99,9 @@ class ManageApp(mosaik_api.Simulator):
             self.declare(Output(coffee_on = True))
             print('something happened at %d' %time)
 
-        
+        @Rule(Input(time = MATCH.time))
+        def _print_time(self, time):
+            print(time)
 
         #### RULES FOR COFFEE MACHINE ####
         

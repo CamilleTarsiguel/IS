@@ -44,7 +44,7 @@ class CoffeeMachine(mosaik_api.Simulator):
         self.store.close()
         return self.meta
 
-    def create(self, num, model, init_time = 5*60, init_bean_level = 100):
+    def create(self, num, model, init_time = 5, init_bean_level = 100):
         counter = self.eid_counters.setdefault(model, count())
         entities = []
 
@@ -77,8 +77,9 @@ class CoffeeMachine(mosaik_api.Simulator):
             esim.step()
             if turn_on == True:
                 esim.machine_on()
-            if esim.is_on() == True:
+            if esim.is_on() == 1:
                 esim.prep_coffee()
+                print('Preparing coffee... count is {0}'.format(esim.get_count()))
             if esim.get_count()>=esim.get_time():
                 esim.machine_off() 
                 esim.use_beans()

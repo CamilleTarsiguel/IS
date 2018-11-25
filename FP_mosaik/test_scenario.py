@@ -224,15 +224,15 @@ world.connect(entity_dict['cl1'], entity_dict['rule1'], ('val', 'time'))
 #world.connect(entity_dict['lumin1'], entity_dict['collector'], ('zs', 'Light power [kwh]'))
 #world.connect(entity_dict['house1'], entity_dict['collector'], ('P', 'Pheat[kW]'))
 #world.connect(entity_dict['house1'], entity_dict['collector'], ('T_int', 'HouseTemp[C]'))
-world.connect(entity_dict['cm1'], entity_dict['collector'], ('on', 'Coffee State'))
-#world.connect(entity_dict['cm1'], entity_dict['collector'], ('bean_level', 'Beans level'))
+#world.connect(entity_dict['cm1'], entity_dict['collector'], ('on', 'Coffee State'))
+world.connect(entity_dict['cm1'], entity_dict['collector'], ('bean_level', 'Beans level'))
 #world.connect(entity_dict['lc1'], entity_dict['collector'], ('on', 'Lamp State'))
 #world.connect(entity_dict['lc1'], entity_dict['collector'], ('Pmax', 'Pmax'))
 #world.connect(entity_dict['lc1'], entity_dict['collector'], ('progressive', 'Progressive'))
 
+#world.connect(entity_dict['rule1'], entity_dict['collector'], ('coffee_on', 'coffee_on'))
 
-
-END = 24*60*60-1 # 24 hours, 1 MosaikTime = 1 second
+END = 2000#24*60*60-1 # 24 hours, 1 MosaikTime = 1 second
 world.run(END)
 ## End of simulation
 
