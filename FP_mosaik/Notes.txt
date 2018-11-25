@@ -1,0 +1,34 @@
+Notes for the mosaik simulation.
+
+Models needed: params, [external variables]
+
+house -- [light, temperature]
+heater -- on/off, set rate, status ok or not, [temperature]
+lamp -- (on/off,) variation, color, status ok or not, [light]
+coffee machine -- on/off, coffee ready, on/off, beans_level, time needed to prepare coffee, status ok or not
+sound system -- on/off, song, sound level, status ok or not
+curtains -- open/close, light emitted from outside? link with weather, or sun
+weather
+clock
+
+The models are set in utils.py
+Then simulations classes need to be set up.
+Control Rules are set in a simulation class as well
+Collector to retrieve the data
+
+RuleEngine affects all models except weather
+
+
+Scenario
+
+Which components to connect and how ?
+
+house - heater
+house - lamp
+curtains - weather?
+lamp - curtains ?
+all to ruleEngine
+all to collector
+
+use PV solar for help for the light 
+look at weather data
